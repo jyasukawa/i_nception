@@ -1,0 +1,98 @@
+# version: '3.8'
+# このversion表記は実はdeprecated (非推奨)であり、現在は一切使用されていない値になります。
+# docker-composeの仕様を定めている compose-spec を読むと、Compose fileの章でversionにDEPRECATEDを書いてあります。
+# 理由を見るとこう書いてあります。現在は参考程度(=コメント)にしかなりません。Composeの実装は、この値を使用してCompose fileを検証するための正確なスキーマを決めてはいけません。常に、設計された時点での最新のスキーマを選択すべきであります。
+
+services:
+  mariadb:
+  # サービスとしてmariadbを定義
+    build: ./requirements/mariadb
+    # サービスのDockerイメージをビルドするためのDockerfileが存在するディレクトリを指定しています。ここでは./requirements/mariadbディレクトリ内のDockerfileを使用
+    # context:でDockerfileが存在するディレクトリを指定
+    # context:を指定しない場合は、デフォルトでコンテキストはDocker Composeファイルがあるディレクトリとなってしまうため、dockerfile:ディレクティブを使うならcontext:もセットで使う
+    container_name: mariadb_container
+    # コンテナの名前をmariadbに設定
+    image: mariadb:42
+    # latestタグは禁止されているため、バージョン'42'tokyoにしておくか表記しない
+    networks:
+      - inception_net
+    # mariadbサービスをinception_netという名前のDockerネットワークに接続します。これにより、他のサービスと同じネットワーク内で通信できるようになります。port:ディレクティブは、外部との接続を可能にするための設定なので、このコンテナでは必要なし
+    volumes:
+      - mariadb_vol:/var/lib/mysql
+    # バインドマウントという機能を利用することで、ホストマシン上のファイルやディレクトリをコンテナ内に紐付け、ホストマシン上のエディタでコンテナ内のファイルを編集したり、他のコンテナやホストマシンとデータを共有したりすることができます。
+    # データボリュームのマウントを定義しています。具体的には、mariadbのデータを格納するためのボリュームを指定しています。
+    # mariadbのデータボリュームを作成し、コンテナ内の/var/lib/mysqlにマウントすることを示しています。ここで、mariadb はボリュームの名前であり、コンテナ内のデータを永続化するために使用されます。この設定により、mariadbコンテナ内のデータがホスト上のmariadbという名前のデータボリュームにマウントされ、コンテナを再起動してもデータが保持されるようになります。
+    restart: always
+    # 課題PDFよりYour containers have to restart in case of a crash.
+    # このディレクティブは、コンテナが停止した場合に自動的に再起動するように設定します。
+    # これは、コンテナが予期せず停止した場合でも、Dockerが自動的に再起動してサービスを継続できるようにするためです。
+    env_file:
+      - .env
+    # 環境変数を外部ファイルから読み込むために使います。同じディレクトリにある .env ファイルを指します。
+
+  nginx:
+    build: ./requirements/nginx
+    container_name: nginx_container
+    image: nginx:42
+    networks:
+      - inception_net
+    volumes:
+      - wordpress_vol:/var/www/html
+    restart: always
+    env_file:
+      - .env
+    depends_on:
+      - wordpress
+    # depends_onを使用すると、指定したコンテナが起動する前に依存するコンテナが先に起動するようにDocker Composeに指示することができます。つまり、指定したコンテナが依存するコンテナが起動し、正常に稼働するまで待機します。
+    # nginx コンテナは app コンテナが起動していないと、（ app コンテナ内にある）Web アプリケーションにリクエストを転送できません。
+    ports:
+      - 443:443
+    # コンテナのポートとホストマシンのポートをマッピングするための設定。ポートマッピングは、コンテナ内の特定のポートをホストマシンのポートに紐付けることで、外部からコンテナにアクセスするための手段となります。
+    # この設定では、Nginxコンテナの443番ポート（HTTPS用ポート）をホストマシンの443番ポートにマッピングしています。つまり、ホストマシンの443番ポートにアクセスすると、そのリクエストがNginxコンテナの443番ポートに転送されます。
+
+  wordpress:
+    build: ./requirements/wordpress
+    container_name: wordpress_container
+    image: wordpress:42
+    networks:
+      - inception_net
+    volumes:
+      - wordpress_vol:/var/www/html
+    restart: always
+    env_file:
+      - .env
+    depends_on:
+      - mariadb
+
+networks:
+  inception_net:
+  # ネットワークの名前です。inception_net という名前が指定されていますが、これはユーザーが任意に指定したものであり、他の名前でも構いません。この名前は後でサービスの定義で使用されます。
+    name: inception_network
+    # 実際に作成されるネットワークの名前です。Dockerによって管理される内部名です。この名前はDockerのネットワーク管理に使用されます。
+    driver: bridge
+    # ネットワークのドライバーを指定します。ここでは bridge ドライバーが使用されています。bridge ドライバーはデフォルトのネットワークドライバーであり、コンテナが同じホスト内で通信するための仮想ブリッジネットワークを提供します。
+    # デフォルトでbridgeのためなくても問題ない
+# 課題PDFより、The network line must be present in your docker-compose.yml file.
+
+volumes:
+# volumes セクションは、コンテナ内の特定のディレクトリやファイルをホストマシンのディレクトリやファイルにバインドする際に使用されます
+  mariadb_vol:
+    name: mariadb_volume
+    # このボリュームの名前を mariadb_vol として指定しています。この名前は他の部分で参照されることがあります。
+    driver: local
+    # ボリュームのドライバーを local に設定しています。これは、ボリュームがローカルストレージにあることを示します。
+    driver_opts:
+      type: bind
+      # ドライバーオプションのタイプを none に設定するとo: bindが正しく機能しない危険がある
+      device: ${MARIADB_VOLUME_PATH}
+      o: bind
+      # o フィールドは、オプションの略で、ここでは bind オプションを指定しています。これは、デバイスをバインドする際に使用されるオプションです。
+# 特定のドライバーオプションは使用せず、代わりに bind オプションを使用してバインドを設定しています。
+
+  wordpress_vol:
+    name: wordpress_volume
+    driver: local
+    driver_opts:
+      type: none
+      device: ${WORDPRESS_VOLUME_PATH}
+      o: bind

@@ -1,0 +1,21 @@
+[server]
+[mysqld]
+user                    = mysql
+pid-file                = /run/mysqld/mysqld.pid
+socket                  = /run/mysqld/mysqld.sock			# 追加
+port                    = 3306												# 追加
+basedir                 = /usr
+datadir                 = /var/lib/mysql
+tmpdir                  = /tmp
+lc-messages-dir         = /usr/share/mysql
+lc-messages             = en_US
+skip-external-locking
+bind-address            = 0.0.0.0											# "127.0.0.1" から変更
+expire_logs_days        = 10
+character-set-server  = utf8mb4
+collation-server      = utf8mb4_general_ci
+log_error = /var/log/mysql/error.log									# 追加
+lower_case_table_names=1															# 追加
+[embedded]
+[mariadb]
+[mariadb-10.5]

@@ -1,0 +1,43 @@
+.gitignoreで
+.vscode
+.DS_Store
+.env
+などを無視する
+
+
+
+校舎VMの初期設定変更（discord、フィードバック参考）
+ボリュームパスの変更
+.envの作成（サンプルをreadmeか.env_exampleで用意）
+
+
+
+-ホストの追加-
+sudo cp /etc/hosts /etc/hosts.backup
+sudo chmod 777 /etc/hosts
+sudo echo "127.0.0.1 jyasukaw.42.fr" >> /etc/hosts
+sudo chmod 644  /etc/hosts
+-ホストの修正-
+sudo chmod 777 /etc/hosts.backup
+sudo cp /etc/hosts.backup /etc/hosts
+sudo rm /etc/hosts.backup
+
+
+
+-wordpressへのアクセス-
+https://jyasukaw.42.fr
+/wp-admin/
+/wp-login.php/
+/index.php
+
+
+
+-mariadbの操作-
+docker container exec -it mariadb_container mysql -u root -p
+パスワードを求められるが、そのままenter→エラー
+正しいパスワード→SELECT User FROM mysql.user;（rootしか使えないコマンド）
+docker container exec -it mariadb_container mysql -u jyasukaw -p
+USE wordpress_db
+SHOW TABLES;
+
+

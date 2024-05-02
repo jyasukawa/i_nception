@@ -1,0 +1,53 @@
+[server]
+[mysqld]
+lower_case_table_names=1
+# [Warning] Setting lower_case_table_names=2 because file system for /var/lib/mysql/ is case insensitiveがなくなる
+
+user                    = mysql
+pid-file                = /run/mysqld/mysqld.pid
+socket                  = /run/mysqld/mysqld.sock
+# もし設定ファイルで socket パラメータが指定されておらず、デフォルトの場所にソケットファイルが存在しない場合、MySQLサーバーはソケットを生成せずにネットワーク接続用のポートをリッスンする形になります。これにより、クライアントはTCP/IP経由で接続する必要があります。
+# コマンドラインでポートの指定をしなければいけなくなる
+
+port                    = 3306
+basedir                 = /usr
+datadir                 = /var/lib/mysql
+tmpdir                  = /tmp
+lc-messages-dir         = /usr/share/mysql
+bind-address            = 0.0.0.0
+expire_logs_days        = 10
+character-set-server  = utf8mb4
+collation-server      = utf8mb4_general_ci
+log_error = /var/log/mysql/error.log
+[embedded]
+[mariadb]
+[mariadb-10.5]
+
+
+
+# 今回はみやすさ重視でデフォルトのコメントアウトを削除
+
+# userは指定しないとデフォルトでrootになる
+# 基本的に、明示的に指定しない場合、デフォルトの設定になる。ただし、環境や設定によってはこのデフォルトの値や場所が異なる可能性があるため、特定の設定にすることが望ましい
+
+# bind-address            = 127.0.0.1 MariaDBがデフォルトでlocalhost（127.0.0.1）にのみバインドしていることを示しています。つまり、外部からの接続を許可していない状態です。
+# bind-address            = 0.0.0.0 MariaDBは全ての利用可能なネットワークインターフェースにバインドします。つまり、すべてのIPアドレスを受け入れるようになり、外部からの接続を許可する設定です。
+# socket                  = /run/mysqld/mysqld.sockも明示的に設定しないと通信方法が変わってしまう
+
+# lc-messages             = en_US
+# skip-external-locking
+# query_cache_size        = 16M
+# log_error = /var/log/mysql/error.log
+# これらの設定も必要に応じてコメントアウトを外す（追加する）
+
+
+#ソケットとTCP/IP経由の違いをわかりやすく解説します。
+ソケット:
+ソケットは、同一のマシン上のプロセス間で通信するための仕組みです。プロセスは自身のソケットを作成し、他のプロセスと通信します。
+ソケットはUNIXドメインソケット（ファイルシステム上のソケット）やインターネットソケット（TCP/IPやUDPを使用するソケット）などがあります。
+ソケットはローカル通信を可能にし、高速で効率的です。セキュリティやプライバシーにも優れています。
+TCP/IP経由:
+TCP/IPは、インターネットでデータを送受信するためのプロトコルです。TCPは信頼性のある接続を提供し、IPはパケットの送受信を処理します。
+TCP/IPを使用すると、異なるネットワーク上のコンピュータ同士でも通信することができます。インターネットやイントラネットなどで広く使用されています。
+TCP/IPはネットワーク通信を行うため、クライアントとサーバーが異なるマシン上にある場合でも通信が可能です。
+簡単に言えば、ソケットは同じコンピュータ内でプロセス間の通信を可能にし、TCP/IPは異なるコンピュータ間でのネットワーク通信を可能にします。ソケットは高速でローカル通信に適していますが、TCP/IPは広範なネットワーク通信に適しています。
